@@ -25,45 +25,83 @@ export const incidentAll = async (req, res) => {
     }
 
 }
-
 export const incidentCreate = async (req, res) => {
     try {
-        const { usuario_id, asunto, descripcion, tipo,  estado } = req.body
-        const image= req.file ? req.file.filename : ''
-        console.log({photo:image}) // referencie photo con image, // photo viene del request del form.
-        if (usuario_id && asunto && descripcion && tipo && estado) {
-            const incinew = await IncidentModel.incdCreate({ usuario_id, asunto, descripcion, tipo,  estado, image }) // añadi el campo image
-            if (incinew.affectedRows === 1) return res.status(200).json({ message: 'Se ha creado el incidente' })
-            if (incinew.affectedRows === 0) return res.status(400).json({ message: 'Error al crear el incidente' })
+        const { usuario_id, asunto, descripcion, tipo, estado, fecha_programada, hora_programada, presupuesto } = req.body;
+        const image = req.file ? req.file.filename : '';
+
+        console.log({ photo: image }); // Referenciando photo con image.
+
+        // Verificar que todos los campos requeridos estén presentes
+        if (usuario_id && asunto && descripcion && tipo && estado && fecha_programada && hora_programada && presupuesto) {
+            const incinew = await IncidentModel.incdCreate({
+                usuario_id,
+                asunto,
+                descripcion,
+                tipo,
+                estado,
+                fecha_programada,
+                hora_programada,
+                presupuesto,
+                image
+            });
+
+            if (incinew.affectedRows === 1) {
+                return res.status(200).json({ message: 'Se ha creado el incidente' });
+            }
+            return res.status(400).json({ message: 'Error al crear el incidente' });
         }
 
-        res.status(400).json({ message: 'Faltan datos para notificar el incidente' })
+        res.status(400).json({ message: 'Faltan datos para notificar el incidente' });
 
     } catch (error) {
-        res.status(500).json({ message: error.message })
+        res.status(500).json({ message: error.message });
     }
+};
 
-}
 
-export const incidenUpdate = async (req, res) => {
+export const incidentUpdate = async (req, res) => {
     try {
-        console.log('Datos recibidos:', req.body);  // <-- Verifica los datos recibidos
-        const { asunto, descripcion, tipo, estado, fecha_creacion } = req.body;
-        const { id } = req.params;
+        console.log('Datos recibidos:', req.body); // Debugging
 
-        if (asunto || descripcion || tipo || estado || fecha_creacion || id) {
-            const incinew = await IncidentModel.incdUpdate({ asunto, descripcion, tipo, estado, fecha_creacion, id });
-            if (incinew.affectedRows === 1) return res.status(200).json({ message: 'Incidente actualizado con éxito' });
-            if (incinew.affectedRows === 0) return res.status(400).json({ message: 'Error al actualizar el incidente' });
+        const { asunto, descripcion, tipo, estado, fecha_creacion, fecha_programada, hora_programada, presupuesto } = req.body;
+        const { id } = req.params;
+        const image = req.file ? req.file.filename : null; // Si hay imagen, la toma; si no, deja `null`.
+
+        // Validar que el ID esté presente y al menos uno de los otros campos tenga valor
+        if (!id) {
+            return res.status(400).json({ message: 'El ID del incidente es obligatorio' });
         }
 
-        res.status(400).json({ message: 'Faltan datos relevantes' });
+        if (!asunto && !descripcion && !tipo && !estado && !fecha_creacion && !fecha_programada && !hora_programada && !presupuesto && !image) {
+            return res.status(400).json({ message: 'Debe proporcionar al menos un campo para actualizar' });
+        }
+
+        const incidentUpdated = await IncidentModel.incdUpdate({
+            id,
+            asunto,
+            descripcion,
+            tipo,
+            estado,
+            fecha_creacion,
+            fecha_programada,
+            hora_programada,
+            presupuesto,
+            image
+        });
+
+        if (incidentUpdated.affectedRows === 1) {
+            return res.status(200).json({ message: 'Incidente actualizado con éxito' });
+        }
+
+        return res.status(400).json({ message: 'No se pudo actualizar el incidente o no hubo cambios' });
 
     } catch (error) {
         console.error('Error en el servidor:', error);
         res.status(500).json({ message: error.message });
     }
 };
+
 
 // estaba manejando la data como form pero cambie a jason// 
 // export const incidenUpdate = async (req, res) => {
